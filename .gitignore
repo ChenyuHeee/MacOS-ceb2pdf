@@ -4,3 +4,4 @@ samples/**/*.ceb
 samples/**/*.cebx
 .DS_Store
 *.html
+.claude/
