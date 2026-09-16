@@ -1,0 +1,24 @@
+# 转换产物是派生物：有对应的 .ceb 就能用 `ceb2pdf` 重新生成。
+# 全部 18 份合计约 74 MB，不适合进 git 历史，所以默认全部忽略，
+# 只显式跟踪一个覆盖各类容器版本与加密模式的小体积子集。
+*
+!.gitignore
+!README.md
+# --- 3DES-OFB (algo 0x80000001) ---
+!moa-gov-cn-2012-syj-1712gg-v2.50.pdf
+!moa-gov-cn-2012-syj-v2.50-7sec.pdf
+!moa-gov-cn-2013-bgt-v2.50-7sec.pdf
+!moa-gov-cn-2017-syj-v2.50-7sec.pdf
+!moa-gov-cn-2019-tzgg-v2.50-7sec.pdf
+!zys-moa-gov-cn-2019-v2.50-7sec.pdf
+!zzj-moa-gov-cn-2019-v2.50-7sec.pdf
+!moa-gov-cn-2017-syj-feixing-v3-maker5.0.pdf
+# --- 3DES-CFB64 (algo 0x80000002) ---
+!zj-gov-cn-2012-5sec-no-type16-v2.50.pdf
+!wuhan-gov-cn-2020-5sec-no-type16-v2.50.pdf
+
+# --- 永不提交 ---
+# 国网公文，明确点名排除。上面的 `*` 已经挡住了，这条是双保险：
+# 万一以后有人加了放行规则，这条仍然生效（gitignore 后出现的规则优先）。
+国家电网*.pdf
+*国家电网*.pdf
