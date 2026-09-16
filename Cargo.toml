@@ -2,7 +2,9 @@
 name = "ceb2pdf"
 version = "0.1.0"
 edition = "2021"
-rust-version = "1.74"
+# 1.85 is forced by a transitive dependency: des 0.9 -> cipher 0.5 -> inout
+# 0.2.2, whose manifest declares edition 2024.  Nothing in this crate needs it.
+rust-version = "1.85"
 description = "Losslessly convert Founder Apabi .ceb files back to the standard PDF they wrap"
 license = "MIT"
 repository = "https://github.com/ChenyuHeee/MacOS-ceb2pdf"
