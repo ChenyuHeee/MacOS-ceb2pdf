@@ -194,8 +194,16 @@ fn parse_mode(s: &str) -> Result<Option<Mode>, Error> {
 pub fn output_path(input: &Path, out: Option<&Path>, many: bool) -> PathBuf {
     match out {
         Some(p) if many || p.is_dir() => {
-            let stem = input.file_stem().unwrap_or(input.as_os_str());
-            p.join(stem).with_extension("pdf")
+            // Append rather than `with_extension`: `file_stem` has already
+            // dropped `.ceb`, and a second extension swap would eat the dot
+            // before it -- `a-v2.50-7sec.ceb` would land as `a-v2.pdf`, which
+            // also risks two inputs colliding on one output name.
+            let mut name = input
+                .file_stem()
+                .unwrap_or(input.as_os_str())
+                .to_os_string();
+            name.push(".pdf");
+            p.join(name)
         }
         Some(p) => p.to_path_buf(),
         None => input.with_extension("pdf"),
@@ -358,12 +366,39 @@ mod tests {
         );
     }
 
-    /// A name with several dots keeps everything but the last component.
+    /// A name with several dots keeps everything but the last component --
+    /// on *both* branches.  The directory branch used to swap the extension a
+    /// second time and truncate `a-v2.50-7sec.ceb` down to `a-v2.pdf`.
     #[test]
     fn output_path_keeps_dotted_names() {
         assert_eq!(
             output_path(Path::new("Notice 2014.526 v2.ceb"), None, false),
             PathBuf::from("Notice 2014.526 v2.pdf")
+        );
+        assert_eq!(
+            output_path(Path::new("moa-2019-tzgg-v2.50-7sec.ceb"), None, false),
+            PathBuf::from("moa-2019-tzgg-v2.50-7sec.pdf")
+        );
+        assert_eq!(
+            output_path(
+                Path::new("moa-2019-tzgg-v2.50-7sec.ceb"),
+                Some(Path::new("/tmp/out")),
+                true
+            ),
+            PathBuf::from("/tmp/out/moa-2019-tzgg-v2.50-7sec.pdf")
+        );
+        // Two inputs differing only after the first dot must not collide.
+        assert_ne!(
+            output_path(
+                Path::new("doc-v2.50.ceb"),
+                Some(Path::new("/tmp/out")),
+                true
+            ),
+            output_path(
+                Path::new("doc-v2.60.ceb"),
+                Some(Path::new("/tmp/out")),
+                true
+            )
         );
     }
 
