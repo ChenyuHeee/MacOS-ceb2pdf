@@ -1,0 +1,93 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
+
+jobs:
+  test:
+    name: test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+
+      # The self-check links the system zlib (see src/verify.rs).  macOS has it
+      # in the SDK; Ubuntu runners ship zlib1g-dev, but be explicit.
+      - name: install zlib headers
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y zlib1g-dev
+
+      - run: cargo fmt --all -- --check
+      - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo test --release
+      # The sample corpus is not in the repository, so the sample-gated tests
+      # skip themselves here.  That is expected -- this run proves the
+      # crypto known-answer vectors and the synthetic round trips.
+      - run: cargo build --release
+
+  size:
+    name: universal binary size
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+      - uses: Swatinem/rust-cache@v2
+
+      - name: build both arches
+        run: |
+          cargo build --release --target aarch64-apple-darwin
+          cargo build --release --target x86_64-apple-darwin
+
+      - name: lipo and check the budget
+        run: |
+          mkdir -p dist
+          lipo -create -output dist/ceb2pdf \
+            target/aarch64-apple-darwin/release/ceb2pdf \
+            target/x86_64-apple-darwin/release/ceb2pdf
+          lipo -info dist/ceb2pdf
+          otool -L dist/ceb2pdf
+          size=$(stat -f%z dist/ceb2pdf)
+          echo "universal binary: $size bytes"
+          echo "### universal binary: $size bytes" >> "$GITHUB_STEP_SUMMARY"
+          # The project targets a universal binary under 1 MB.  Fail loudly
+          # rather than let it creep, e.g. by someone adding a PDF library.
+          if [ "$size" -gt 1048576 ]; then
+            echo "::error::universal binary is $size bytes, over the 1 MB budget"
+            exit 1
+          fi
+
+      - name: smoke test
+        run: |
+          ./dist/ceb2pdf --help
+          ./dist/ceb2pdf --version
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ceb2pdf-macos-universal
+          path: dist/ceb2pdf
+          if-no-files-found: error
+
+  msrv:
+    name: minimum supported Rust version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.74.0
+      - uses: Swatinem/rust-cache@v2
+      - run: sudo apt-get update && sudo apt-get install -y zlib1g-dev
+      - run: cargo build --release
