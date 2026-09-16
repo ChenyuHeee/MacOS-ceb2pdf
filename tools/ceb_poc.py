@@ -2,11 +2,16 @@
 """CEB -> PDF proof of concept.  Verified against samples/ceb/*.ceb.
 
 Pipeline:  container -> Founder-RC4 (whole body) -> RSA-unwrap 3DES key
-           -> 3DES-OFB per stream -> strip /Encrypt -> PDF
+           -> 3DES-CFB64 per stream -> strip /Encrypt -> PDF
 
-Status: container/RC4/RSA/3DES all verified.  Image (ImageMask) streams
-decrypt perfectly.  FlateDecode page-content streams still do not inflate
--- see FINDINGS.md "Open problem".
+Status: end-to-end verified on the sample.  All 20 /FlateDecode streams
+inflate, all 18 pages render with extractable GBK text, all 501 ImageMask
+bitmaps come out as clean glyphs.
+
+The per-stream cipher is 3DES in **CFB mode with 64-bit segments**, re-keyed
+every 256 bytes -- NOT OFB.  The two modes are indistinguishable on the first
+8 bytes of every chunk (and on any all-zero plaintext prefix), which is why
+OFB appeared to validate.  See docs/content-streams.md.
 """
 import struct, re, sys, zlib
 from Crypto.Cipher import DES3
@@ -88,7 +93,8 @@ def convert(path, out):
         buf = bytearray()
         for p in range(0, length, 256):          # fresh IV every 256 bytes
             chunk = bytes(pdf[start + p:start + min(p + 256, length)])
-            buf += DES3.new(key, DES3.MODE_OFB, iv=key[:8]).decrypt(chunk)
+            buf += DES3.new(key, DES3.MODE_CFB, iv=key[:8],
+                            segment_size=64).decrypt(chunk)
         pdf[start:start + length] = buf
 
     i = bytes(pdf).rfind(b'/Encrypt')            # blank it out, same width,
