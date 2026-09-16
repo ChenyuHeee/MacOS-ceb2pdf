@@ -1,0 +1,41 @@
+[package]
+name = "ceb2pdf"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.74"
+description = "Losslessly convert Founder Apabi .ceb files back to the standard PDF they wrap"
+license = "MIT"
+repository = "https://github.com/ChenyuHeee/MacOS-ceb2pdf"
+readme = "README.md"
+keywords = ["ceb", "pdf", "apabi", "founder", "converter"]
+categories = ["command-line-utilities"]
+
+[dependencies]
+# The only third-party crate.  Everything else -- container parsing, the
+# Founder RC4 variant, the 512-bit modular exponentiation, OFB chaining,
+# argument parsing and the worker pool -- is in this repo, because pulling a
+# bignum crate or clap in would cost more binary size than the code they
+# replace.  zlib (used only for the post-conversion self-check) is linked
+# from the system, see src/verify.rs.
+des = { version = "0.9", default-features = false }
+
+# The RC4 layer is a byte-at-a-time loop over the whole document and the sample
+# corpus includes a 23 MB file; unoptimised that turns `cargo test` into a
+# coffee break.
+[profile.test]
+opt-level = 2
+
+[profile.release]
+opt-level = "z"
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = "symbols"
+
+[[bin]]
+name = "ceb2pdf"
+path = "src/main.rs"
+
+[lib]
+name = "ceb2pdf"
+path = "src/lib.rs"
