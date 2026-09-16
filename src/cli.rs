@@ -28,8 +28,9 @@ OPTIONS:
                              converting or writing anything
         --no-verify          Skip the post-conversion self-check
         --force-mode <MODE>  Override the container's algorithm id.  One of
-                             `none`, `cfb64` (verified) or `ofb` (never seen
-                             in a real file)
+                             `none`, `ofb` or `cfb64`.  All three occur in real
+                             files; the container normally picks the right one,
+                             so only reach for this to diagnose an odd file
     -h, --help               Print this help
     -V, --version            Print the version
 
