@@ -1,6 +1,6 @@
 # 转换产物是派生物：有对应的 .ceb 就能用 `ceb2pdf` 重新生成。
 # 全部 18 份合计约 74 MB，不适合进 git 历史，所以默认全部忽略，
-# 只显式跟踪一个覆盖各类容器版本与加密模式的小体积子集。
+# 只显式跟踪几份 300 KB 以下的样本，够看效果即可。
 *
 !.gitignore
 !README.md
@@ -12,7 +12,6 @@
 !moa-gov-cn-2019-tzgg-v2.50-7sec.pdf
 !zys-moa-gov-cn-2019-v2.50-7sec.pdf
 !zzj-moa-gov-cn-2019-v2.50-7sec.pdf
-!moa-gov-cn-2017-syj-feixing-v3-maker5.0.pdf
 # --- 3DES-CFB64 (algo 0x80000002) ---
 !zj-gov-cn-2012-5sec-no-type16-v2.50.pdf
 !wuhan-gov-cn-2020-5sec-no-type16-v2.50.pdf
