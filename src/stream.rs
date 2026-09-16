@@ -51,7 +51,9 @@ pub trait StreamDecryptor: Send + Sync {
 }
 
 /// 3DES with a chaining mode, the IV taken from the key, restarted every 256
-/// bytes.  `Mode::Cfb64` is the verified configuration.
+/// bytes.  Both modes are verified against the corpus: `Ofb` covers 13 of the
+/// 18 samples (algorithm id 1) and `Cfb64` the other 4 (id 2).  The mode comes
+/// from the algorithm id -- never hardcode one.
 pub struct Tdes3 {
     cipher: Tdes,
     mode: Mode,
